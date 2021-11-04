@@ -1,4 +1,5 @@
 from constants import *
+from uk_covid19 import Cov19API
 
 def parse_csv_data(csv_filename : str) -> str:
 
@@ -34,3 +35,27 @@ def process_covid_csv_data(covid_csv_data : str) -> int:
         i += 1
 
     return cases_7days, int(total_deaths), int(current_hospital_cases)
+
+def covid_API_request(location : str = "Exeter", location_type : str = "ltla") -> dict:
+    # Takes location & location type (defaulting to Exeter and ltla) and uses them as filters
+    # when retrieving information about COVID-19 statistics.
+    # The output is a dictionary with the retrieved information.
+
+    location_info = [
+        f'areaName={location}',
+        f'areaType={location_type}'
+    ]
+    target_info = {
+        "date": "date",
+        "areaName": "areaName",
+        "areaCode": "areaCode",
+        "newCasesByPublishDate": "newCasesByPublishDate",
+        "cumCasesByPublishDate": "cumCasesByPublishDate",
+        "newDeaths28DaysByDeathDate": "newDeaths28DaysByDeathDate",
+        "cumDeaths28DaysByDeathDate": "cumDeaths28DaysByDeathDate"
+    }
+
+    api = Cov19API(filters=location_info, structure=target_info)
+    json_data = api.get_json()
+    
+    return json_data
