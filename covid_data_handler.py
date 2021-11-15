@@ -1,5 +1,6 @@
 from constants import *
 from uk_covid19 import Cov19API
+import sched, time
 
 def parse_csv_data(csv_filename : str) -> str:
 
@@ -59,3 +60,8 @@ def covid_API_request(location : str = "Exeter", location_type : str = "ltla") -
     json_data = api.get_json()
     
     return json_data
+
+def schedule_covid_updates(update_interval : int, update_name : str):
+    s = sched.scheduler(time.time, time.sleep)
+    s.enter(update_interval, 1, update_name)
+    s.run()
