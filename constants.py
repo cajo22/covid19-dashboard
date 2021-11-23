@@ -1,6 +1,6 @@
 # CSV related
 ROW_MOST_RECENT_DAY = 1 # First row with data (i.e row 2)
-ROW_FIRST_COMPLETE_DAY = 2 # First row with valid data for the 7-day total (i.e row 3)
+ROW_FIRST_COMPLETE_DAY = 3 # First row with valid data for the 7-day total (i.e row 4)
 
 COL_AREA_CODE = 0
 COL_AREA_NAME = 1

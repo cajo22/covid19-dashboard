@@ -1,6 +1,9 @@
 from constants import *
 from uk_covid19 import Cov19API
 import sched, time
+from flask import Flask, render_template
+
+app = Flask(__name__)
 
 def parse_csv_data(csv_filename : str) -> str:
 
@@ -43,17 +46,13 @@ def covid_API_request(location : str = "Exeter", location_type : str = "ltla") -
     # The output is a dictionary with the retrieved information.
 
     location_info = [
-        f'areaName={location}',
-        f'areaType={location_type}'
+        f"areaName={location}",
+        f"areaType={location_type}"
     ]
     target_info = {
         "date": "date",
         "areaName": "areaName",
-        "areaCode": "areaCode",
         "newCasesByPublishDate": "newCasesByPublishDate",
-        "cumCasesByPublishDate": "cumCasesByPublishDate",
-        "newDeaths28DaysByDeathDate": "newDeaths28DaysByDeathDate",
-        "cumDeaths28DaysByDeathDate": "cumDeaths28DaysByDeathDate"
     }
 
     api = Cov19API(filters=location_info, structure=target_info)
@@ -64,4 +63,26 @@ def covid_API_request(location : str = "Exeter", location_type : str = "ltla") -
 def schedule_covid_updates(update_interval : int, update_name : str):
     s = sched.scheduler(time.time, time.sleep)
     s.enter(update_interval, 1, update_name)
-    s.run()
+    s.run(blocking=False)
+
+def process_covid_json_data(json_data : dict) -> str:
+    # Intended to be used with the json data retrieved with the Cov19API
+    # Extract the location of data and infections in the last 7 days and return them
+
+    local_7day_infections = 0
+    for i in range(1, 8):
+        local_7day_infections += ((json_data["data"])[i])["newCasesByPublishDate"]
+    location = ((json_data["data"])[1])["areaName"]
+    return(location, local_7day_infections)
+
+@app.route('/index')
+def dashboard_process():
+    national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data("resource/nation_2021-10-28.csv"))
+    location, local_7day_infections = process_covid_json_data(covid_API_request())
+    return(render_template("index.html", national_7day_infections = national_7day_infections,
+    hospital_cases = f"Total hospital cases: {hospital_cases}",
+    deaths_total = f"Total deaths: {deaths_total}", location = location,
+    local_7day_infections = local_7day_infections, title = "Daily updates"))
+
+if __name__ == "__main__":
+    app.run()
