@@ -3,6 +3,8 @@ from uk_covid19 import Cov19API
 import sched, time
 from flask import Flask, render_template
 
+from covid_news_handling import news_API_request, process_news_json_data
+
 app = Flask(__name__)
 
 def parse_csv_data(csv_filename : str) -> str:
@@ -50,7 +52,6 @@ def covid_API_request(location : str = "Exeter", location_type : str = "ltla") -
         f"areaType={location_type}"
     ]
     target_info = {
-        "date": "date",
         "areaName": "areaName",
         "newCasesByPublishDate": "newCasesByPublishDate",
     }
@@ -77,12 +78,17 @@ def process_covid_json_data(json_data : dict) -> str:
 
 @app.route('/index')
 def dashboard_process():
+    # This function prepares the variables for the first load of the dashboard.
+
     national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data("resource/nation_2021-10-28.csv"))
     location, local_7day_infections = process_covid_json_data(covid_API_request())
+    news = process_news_json_data(news_API_request())
+
     return(render_template("index.html", national_7day_infections = national_7day_infections,
     hospital_cases = f"Total hospital cases: {hospital_cases}",
     deaths_total = f"Total deaths: {deaths_total}", location = location,
-    local_7day_infections = local_7day_infections, title = "Daily updates"))
+    local_7day_infections = local_7day_infections, title = "Daily updates",
+    nation_location = "England", news_articles = news))
 
 if __name__ == "__main__":
     app.run()
