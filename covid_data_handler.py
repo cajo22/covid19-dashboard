@@ -1,11 +1,13 @@
 from constants import *
 from uk_covid19 import Cov19API
 import sched, time
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
 from covid_news_handling import news_API_request, process_news_json_data
 
 app = Flask(__name__)
+
+data_updates = []
 
 def parse_csv_data(csv_filename : str) -> str:
 
@@ -76,19 +78,48 @@ def process_covid_json_data(json_data : dict) -> str:
     location = ((json_data["data"])[1])["areaName"]
     return(location, local_7day_infections)
 
+def hhmm_seconds_conversion(time : str) -> int:
+    hhmm_array = time.split(":")
+    return((int(hhmm_array[0]) * 3600) + (int(hhmm_array[1]) * 60))
+
 @app.route('/index')
 def dashboard_process():
-    # This function prepares the variables for the first load of the dashboard.
+    # This function prepares the variables for loading of the dashboard.
 
     national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data("resource/nation_2021-10-28.csv"))
     location, local_7day_infections = process_covid_json_data(covid_API_request())
     news = process_news_json_data(news_API_request())
 
+    text_field = request.args.get("two")
+    if text_field:
+        update_time = request.args.get("update")
+        if update_time:
+            print(hhmm_seconds_conversion(update_time))
+
+        if request.args.get("repeat"):
+            should_repeat = "True"
+        else:
+            should_repeat = "False"
+
+        if request.args.get("covid-data"):
+            should_update_covid = "True"
+        else:
+            should_update_covid = "False"
+
+        if request.args.get("news"):
+            should_update_news = "True"
+        else:
+            should_update_news = "False"
+
+        data_updates.append({ "title": text_field, "content": f"""Time: {update_time}, Repeat: {should_repeat}
+        Update covid data: {should_update_covid}, Update news: {should_update_news}""",
+        "repeat": should_repeat, "covid": should_update_news, "news": should_update_news, })
+
     return(render_template("index.html", national_7day_infections = national_7day_infections,
     hospital_cases = f"Total hospital cases: {hospital_cases}",
     deaths_total = f"Total deaths: {deaths_total}", location = location,
     local_7day_infections = local_7day_infections, title = "Daily updates",
-    nation_location = "England", news_articles = news))
+    nation_location = "England", news_articles = news, updates = data_updates))
 
 if __name__ == "__main__":
     app.run()
