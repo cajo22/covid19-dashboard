@@ -1,4 +1,4 @@
-from globals import *
+from globals import s, data_updates, hidden_article_titles
 import json, requests, sched, time
 from flask import templating
 
@@ -28,6 +28,18 @@ def process_news_json_data(json_data : dict = news_API_request()) -> dict:
         news_index += 1
 
     return return_dicts
+
+def remove_news(news_title : str, news : dict):
+    # When removing news, binary search based on title.
+    # Delete it from news and add it to list of hidden titles
+
+    # TO-DO: FIX BUG WHERE LAST ARTICLE NOT REMOVED
+
+    for i in range(len(news) - 1):
+        print((news[i])["title"])
+        if ((news[i])["title"]) == news_title:
+            hidden_article_titles.append(news_title)
+            del news[i]
 
 def remove_update(update_name : str):
     # When removing an update, binary search based on title.

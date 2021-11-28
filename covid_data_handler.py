@@ -4,7 +4,7 @@ from uk_covid19 import Cov19API
 import sched, time, random
 from flask import Flask, render_template, request
 
-from covid_news_handling import process_news_json_data, remove_update, schedule_news_updates
+from covid_news_handling import process_news_json_data, remove_update, schedule_news_updates, remove_news
 
 app = Flask(__name__)
 
@@ -101,8 +101,7 @@ def dashboard_process():
 
     news_to_remove = request.args.get("notif")
     if news_to_remove:
-        #print(request.values.get("notif"))
-        hidden_article_titles.append(news_to_remove)
+        remove_news(news_to_remove, news)
     
     update_to_remove = request.args.get("update_item")
     if update_to_remove:
