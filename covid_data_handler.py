@@ -1,6 +1,6 @@
 from constants import *
 from uk_covid19 import Cov19API
-import sched, time
+import sched, time, random
 from flask import Flask, render_template, request
 
 from covid_news_handling import news_API_request, process_news_json_data
@@ -8,6 +8,7 @@ from covid_news_handling import news_API_request, process_news_json_data
 app = Flask(__name__)
 
 data_updates = []
+hidden_article_titles = []
 
 def parse_csv_data(csv_filename : str) -> str:
 
@@ -88,13 +89,29 @@ def dashboard_process():
 
     national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data("resource/nation_2021-10-28.csv"))
     location, local_7day_infections = process_covid_json_data(covid_API_request())
-    news = process_news_json_data(news_API_request())
+    news = process_news_json_data(news_API_request(), hidden_article_titles)
+
+    # When removing news, add it to the list of titles that should not be displayed.
+
+    news_to_remove = request.args.get("notif")
+    if news_to_remove:
+        #print(request.values.get("notif"))
+        hidden_article_titles.append(news_to_remove)
+    
+    # When removing an update, binary search based on title and remove from data_updates when found
+
+    update_to_remove = request.args.get("update_item")
+    if update_to_remove:
+        for i in range(len(data_updates) - 1):
+             if (data_updates[i])["title"] == update_to_remove:
+                 del data_updates[i]
 
     text_field = request.args.get("two")
     if text_field:
         update_time = request.args.get("update")
         if update_time:
-            print(hhmm_seconds_conversion(update_time))
+            #print(hhmm_seconds_conversion(datetime.strftime("%H:%M"))
+            #print(hhmm_seconds_conversion(update_time))
 
         if request.args.get("repeat"):
             should_repeat = "True"
@@ -110,8 +127,20 @@ def dashboard_process():
             should_update_news = "True"
         else:
             should_update_news = "False"
+        
+        # Each update has its own unique ID which is appended to the label.
+        # This is because of a bug that arises when 2+ identically-labelled updates exist.
+        # Updates are removed from data_updates by finding their title in a binary search, so...
+        # Without an ID, when removing one of these updates, it's always the first update that is removed.
 
-        data_updates.append({ "title": text_field, "content": f"""Time: {update_time}, Repeat: {should_repeat}
+        next_id_no = 0
+        while next_id_no == 0:
+            next_id_no = random.randint(0,65535)
+            for i in range(len(data_updates) - 1):
+                if (data_updates[i])["id"] == next_id_no:
+                    next_id_no = 0
+
+        data_updates.append({"title": f"{text_field} (id: {next_id_no})", "content": f"""Time: {update_time}, Repeat: {should_repeat}
         Update covid data: {should_update_covid}, Update news: {should_update_news}""",
         "repeat": should_repeat, "covid": should_update_news, "news": should_update_news, })
 

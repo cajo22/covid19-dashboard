@@ -7,19 +7,26 @@ def news_API_request(covid_terms : str = "Covid COVID-19 coronavirus") -> dict:
     response = requests.get(base_url_with_api_key)
     return(response.json())
 
-def process_news_json_data(json_data : dict) -> dict:
+def process_news_json_data(json_data : dict, hidden_article_titles : str) -> dict:
     return_dicts = []
     temp_article = {}
+    news_index = 0
+    current_news_count = 0
 
-    for i in range(10):
-        temp_article = ((json_data["articles"])[i])
-        return_dicts.append( { "title": temp_article["title"]
+    # A list of 10 articles will always be displayed (unless the API call can't find that many.)
+    # When removing articles, add them to the list of 'hidden titles'.
+    # Continue adding titles until a list of 10 articles is formed, skipping over those with a 'hidden title'.
+
+    while current_news_count < 10:
+        temp_article = ((json_data["articles"])[news_index])
+        if temp_article["title"] not in hidden_article_titles:
+            return_dicts.append( { "title": temp_article["title"]
          #+ " (" + (temp_article["source"])["name"] + ")"
          , "content": (temp_article["content"])[:192] + "... (" + temp_article["url"] + ")" } )
+            current_news_count += 1
+        news_index += 1
 
     return return_dicts
 
 def update_news():
     news_API_request()
-
-process_news_json_data(news_API_request())
