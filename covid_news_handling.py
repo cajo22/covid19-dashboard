@@ -1,4 +1,4 @@
-import json, requests
+import json, requests, sched, time
 from flask import templating
 
 def news_API_request(covid_terms : str = "Covid COVID-19 coronavirus") -> dict:
@@ -30,3 +30,8 @@ def process_news_json_data(json_data : dict, hidden_article_titles : str) -> dic
 
 def update_news(news : dict, hidden_article_titles : str):
     news = process_news_json_data(news_API_request(), hidden_article_titles)
+
+def schedule_news_updates(s, update_interval : int, update_name : str):
+    # Schedule a covid data update with the specified delay.
+    # The name is passed so the update can be deleted from the dashboard after it occurs.
+    e1 = s.enter(update_interval, 1, update_news, (update_name,))

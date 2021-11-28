@@ -71,12 +71,13 @@ def update_covid_data(update_name : str):
     location, local_7day_infections = process_covid_json_data(covid_API_request())
 
     # Remove update from data_updates
+    print("Update complete.")
     remove_update(update_name)
 
 def schedule_covid_updates(update_interval : int, update_name : str):
     # Schedule a covid data update with the specified delay.
     # The name is passed so the update can be deleted from the dashboard after it occurs.
-    e1 = s.enter(update_interval, 1, update_covid_data, (update_name,))
+    return s.enter(update_interval, 1, update_covid_data, (update_name,))
 
 def process_covid_json_data(json_data : dict) -> str:
     # Intended to be used with the json data retrieved with the Cov19API
@@ -97,9 +98,11 @@ def hhmmss_seconds_conversion(time : str) -> int:
 
 def remove_update(update_name : str):
     # When removing an update, binary search based on title and remove from data_updates when found
+    # Also cancel its event.
 
     for i in range(len(data_updates)):
         if (data_updates[i])["title"] == update_name:
+            s.cancel((data_updates[i])["covid_update_event"])
             del data_updates[i]
 
 @app.route('/index')
@@ -164,11 +167,17 @@ def dashboard_process():
         # Schedule updates
 
         if should_update_covid:
-            schedule_covid_updates( delay, f"{text_field} (id: {next_id_no})" )
+            covid_update_event = schedule_covid_updates( delay, f"{text_field} (id: {next_id_no})" )
+        else:
+            covid_update_event = None
+
+        #if should_update_news:
+        #    schedule_news_updates( s, delay, f"{text_field} (id: {next_id_no})" )
 
         data_updates.append({"id": {next_id_no}, "title": f"{text_field} (id: {next_id_no})",
         "content": f"""Time: {update_time}, Repeat: {should_repeat}
-        Update covid data: {should_update_covid}, Update news: {should_update_news}""" })
+        Update covid data: {should_update_covid}, Update news: {should_update_news}""",
+        "covid_update_event": covid_update_event })
 
     return(render_template("index.html", national_7day_infections = national_7day_infections,
     hospital_cases = f"Total hospital cases: {hospital_cases}",
