@@ -9,6 +9,8 @@ app = Flask(__name__)
 
 data_updates = []
 hidden_article_titles = []
+global national_7day_infections, hospital_cases, deaths_total, local_7day_infections
+s = sched.scheduler(time.time, time.sleep)
 
 def parse_csv_data(csv_filename : str) -> str:
 
@@ -64,10 +66,17 @@ def covid_API_request(location : str = "Exeter", location_type : str = "ltla") -
     
     return json_data
 
+def update_covid_data(update_name : str):
+    national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data("resource/nation_2021-10-28.csv"))
+    location, local_7day_infections = process_covid_json_data(covid_API_request())
+
+    # Remove update from data_updates
+    remove_update(update_name)
+
 def schedule_covid_updates(update_interval : int, update_name : str):
-    s = sched.scheduler(time.time, time.sleep)
-    s.enter(update_interval, 1, update_name)
-    s.run(blocking=False)
+    # Schedule a covid data update with the specified delay.
+    # The name is passed so the update can be deleted from the dashboard after it occurs.
+    e1 = s.enter(update_interval, 1, update_covid_data, (update_name,))
 
 def process_covid_json_data(json_data : dict) -> str:
     # Intended to be used with the json data retrieved with the Cov19API
@@ -79,17 +88,25 @@ def process_covid_json_data(json_data : dict) -> str:
     location = ((json_data["data"])[1])["areaName"]
     return(location, local_7day_infections)
 
-def hhmm_seconds_conversion(time : str) -> int:
-    hhmm_array = time.split(":")
-    return((int(hhmm_array[0]) * 3600) + (int(hhmm_array[1]) * 60))
+# Convert hhmmss values to seconds only
+# Used for update timings
+
+def hhmmss_seconds_conversion(time : str) -> int:
+    hhmmss_array = time.split(":")
+    return((int(hhmmss_array[0]) * 3600) + (int(hhmmss_array[1]) * 60) + (int(hhmmss_array[2])))
+
+def remove_update(update_name : str):
+    # When removing an update, binary search based on title and remove from data_updates when found
+
+    for i in range(len(data_updates)):
+        if (data_updates[i])["title"] == update_name:
+            del data_updates[i]
 
 @app.route('/index')
 def dashboard_process():
-    # This function prepares the variables for loading of the dashboard.
+    # This function is the 'meat' of the dashboard and adds virtually all of the interactivity.
 
-    national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data("resource/nation_2021-10-28.csv"))
-    location, local_7day_infections = process_covid_json_data(covid_API_request())
-    news = process_news_json_data(news_API_request(), hidden_article_titles)
+    s.run(blocking=False)
 
     # When removing news, add it to the list of titles that should not be displayed.
 
@@ -98,21 +115,24 @@ def dashboard_process():
         #print(request.values.get("notif"))
         hidden_article_titles.append(news_to_remove)
     
-    # When removing an update, binary search based on title and remove from data_updates when found
-
     update_to_remove = request.args.get("update_item")
     if update_to_remove:
-        for i in range(len(data_updates) - 1):
-             if (data_updates[i])["title"] == update_to_remove:
-                 del data_updates[i]
+        remove_update(update_to_remove)
+
+    # This section handles how updates are processed.
+    # Updates are stored in data_updates.
 
     text_field = request.args.get("two")
     if text_field:
         update_time = request.args.get("update")
         if update_time:
-            #print(hhmm_seconds_conversion(datetime.strftime("%H:%M"))
-            #print(hhmm_seconds_conversion(update_time))
-
+            local_seconds = hhmmss_seconds_conversion(f"{(time.localtime())[3]}:{(time.localtime())[4]}:{(time.localtime())[5]}")
+            update_seconds = hhmmss_seconds_conversion(f"{update_time}:00")
+            if (local_seconds < update_seconds):
+                delay = update_seconds - local_seconds
+            else:
+                delay = 86400 - (local_seconds - update_seconds)
+        
         if request.args.get("repeat"):
             should_repeat = "True"
         else:
@@ -136,13 +156,19 @@ def dashboard_process():
         next_id_no = 0
         while next_id_no == 0:
             next_id_no = random.randint(0,65535)
-            for i in range(len(data_updates) - 1):
-                if (data_updates[i])["id"] == next_id_no:
-                    next_id_no = 0
+            if len(data_updates) > 0:
+                for i in range(len(data_updates) - 1):
+                    if (data_updates[i])["id"] == next_id_no:
+                        next_id_no = 0
 
-        data_updates.append({"title": f"{text_field} (id: {next_id_no})", "content": f"""Time: {update_time}, Repeat: {should_repeat}
-        Update covid data: {should_update_covid}, Update news: {should_update_news}""",
-        "repeat": should_repeat, "covid": should_update_news, "news": should_update_news, })
+        # Schedule updates
+
+        if should_update_covid:
+            schedule_covid_updates( delay, f"{text_field} (id: {next_id_no})" )
+
+        data_updates.append({"id": {next_id_no}, "title": f"{text_field} (id: {next_id_no})",
+        "content": f"""Time: {update_time}, Repeat: {should_repeat}
+        Update covid data: {should_update_covid}, Update news: {should_update_news}""" })
 
     return(render_template("index.html", national_7day_infections = national_7day_infections,
     hospital_cases = f"Total hospital cases: {hospital_cases}",
@@ -151,4 +177,13 @@ def dashboard_process():
     nation_location = "England", news_articles = news, updates = data_updates))
 
 if __name__ == "__main__":
+
+    # Initial data grab
+
+    national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data("resource/nation_2021-10-28.csv"))
+    location, local_7day_infections = process_covid_json_data(covid_API_request())
+    news = process_news_json_data(news_API_request(), hidden_article_titles)
+
+    # Run dashboard
+
     app.run()

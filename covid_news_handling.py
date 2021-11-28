@@ -28,5 +28,5 @@ def process_news_json_data(json_data : dict, hidden_article_titles : str) -> dic
 
     return return_dicts
 
-def update_news():
-    news_API_request()
+def update_news(news : dict, hidden_article_titles : str):
+    news = process_news_json_data(news_API_request(), hidden_article_titles)
