@@ -63,7 +63,7 @@ def covid_API_request(location : str = config_data["local_location"], location_t
     return json_data
 
 def update_covid_data(update_name : str):
-    national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data("resource/nation_2021-10-28.csv"))
+    national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data(config_data["national_data_csv_path"]))
     location, local_7day_infections = process_covid_json_data(covid_API_request())
 
     # Remove update from data_updates

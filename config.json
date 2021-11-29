@@ -4,5 +4,6 @@
     "article_id_upper_bound" : 99999,
     "news_search_terms" : "Covid COVID-19 coronavirus",
     "local_location" : "Exeter",
-    "local_location_type" : "ltla"
+    "local_location_type" : "ltla",
+    "national_data_csv_path" : "resource/nation_2021-10-28.csv"
 }
