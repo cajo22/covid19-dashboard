@@ -43,7 +43,7 @@ def process_covid_csv_data(covid_csv_data : str) -> int:
 
     return cases_7days, int(total_deaths), int(current_hospital_cases)
 
-def covid_API_request(location : str = "Exeter", location_type : str = "ltla") -> dict:
+def covid_API_request(location : str = config_data["local_location"], location_type : str = config_data["local_location_type"]) -> dict:
     # Takes location & location type (defaulting to Exeter and ltla) and uses them as filters
     # when retrieving information about COVID-19 statistics.
     # The output is a dictionary with the retrieved information.
@@ -143,7 +143,7 @@ def dashboard_process():
 
         next_id_no = 0
         while next_id_no == 0:
-            next_id_no = random.randint(0,65535)
+            next_id_no = random.randint(0, config_data["update_id_upper_bound"])
             if len(data_updates) > 0:
                 for i in range(len(data_updates) - 1):
                     if (data_updates[i])["id"] == next_id_no:

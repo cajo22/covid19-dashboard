@@ -1,10 +1,13 @@
-from globals import s, data_updates, hidden_article_titles
+from globals import s, data_updates, hidden_article_titles, config_data
 import json, requests, sched, time
 from flask import templating
 
-def news_API_request(covid_terms : str = "Covid COVID-19 coronavirus") -> dict:
+def news_API_request(covid_terms : str = config_data["news_search_terms"]) -> dict:
     fixed_terms = covid_terms.replace(" ", " OR ")
-    base_url_with_api_key = f"https://newsapi.org/v2/everything?q=\u0027{fixed_terms}\u0027&apiKey=38f40c38c5b44f8c8b84b89135578a9c"
+
+    api_key = config_data["news_api_key"]
+
+    base_url_with_api_key = f"https://newsapi.org/v2/everything?q=\u0027{fixed_terms}\u0027&apiKey={api_key}"
     response = requests.get(base_url_with_api_key)
     return(response.json())
 
@@ -14,11 +17,11 @@ def process_news_json_data(json_data : dict = news_API_request()) -> dict:
     news_index = 0
     current_news_count = 0
 
-    # A list of 10 articles will always be displayed (unless the API call can't find that many.)
+    # A list of max_news_articles articles will always be displayed (unless the API call can't find that many.)
     # When removing articles, add them to the list of 'hidden titles'.
-    # Continue adding titles until a list of 10 articles is formed, skipping over those with a 'hidden title'.
+    # Continue adding titles until a list of max_news_articles articles is formed, skipping over those with a 'hidden title'.
 
-    while current_news_count < 10:
+    while current_news_count < config_data["max_news_articles"]:
         temp_article = ((json_data["articles"])[news_index])
         if temp_article["title"] not in hidden_article_titles:
             return_dicts.append( { "title": temp_article["title"]

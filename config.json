@@ -1,0 +1,8 @@
+{
+    "news_api_key" : "38f40c38c5b44f8c8b84b89135578a9c",
+    "max_news_articles" : 10,
+    "article_id_upper_bound" : 99999,
+    "news_search_terms" : "Covid COVID-19 coronavirus",
+    "local_location" : "Exeter",
+    "local_location_type" : "ltla"
+}
