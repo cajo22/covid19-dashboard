@@ -170,13 +170,14 @@ def dashboard_process():
     hospital_cases = f"Total hospital cases: {hospital_cases}",
     deaths_total = f"Total deaths: {deaths_total}", location = location,
     local_7day_infections = local_7day_infections, title = "Daily updates",
-    nation_location = "England", news_articles = news, updates = data_updates))
+    nation_location = "England", news_articles = news, updates = data_updates,
+    image = config_data["image_path"],))
 
 if __name__ == "__main__":
 
     # Initial data grab
 
-    national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data("resource/nation_2021-10-28.csv"))
+    national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data(config_data["national_data_csv_path"]))
     location, local_7day_infections = process_covid_json_data(covid_API_request())
     news = process_news_json_data()
 
