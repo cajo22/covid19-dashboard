@@ -7,7 +7,7 @@ def news_API_request(covid_terms : str = config_data["news_search_terms"]) -> di
 
     api_key = config_data["news_api_key"]
 
-    base_url_with_api_key = f"https://newsapi.org/v2/everything?q=\u0027{fixed_terms}\u0027&apiKey={api_key}"
+    base_url_with_api_key = f"https://newsapi.org/v2/everything?q=\u0027{fixed_terms}\u0027&apiKey={api_key}&sortBy=publishedAt&language=en"
     response = requests.get(base_url_with_api_key)
     return(response.json())
 

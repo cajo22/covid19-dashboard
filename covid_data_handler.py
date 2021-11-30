@@ -87,9 +87,9 @@ def process_covid_json_data(json_data : dict) -> str:
 # Convert hhmmss values to seconds only
 # Used for update timings
 
-def hhmmss_seconds_conversion(time : str) -> int:
-    hhmmss_array = time.split(":")
-    return((int(hhmmss_array[0]) * 3600) + (int(hhmmss_array[1]) * 60) + (int(hhmmss_array[2])))
+def hhmm_seconds_conversion(time : str) -> int:
+    hhmm_array = time.split(":")
+    return((int(hhmm_array[0]) * 3600) + (int(hhmm_array[1]) * 60))
 
 @app.route('/index')
 def dashboard_process():
@@ -114,8 +114,8 @@ def dashboard_process():
     if text_field:
         update_time = request.args.get("update")
         if update_time:
-            local_seconds = hhmmss_seconds_conversion(f"{(time.localtime())[3]}:{(time.localtime())[4]}:{(time.localtime())[5]}")
-            update_seconds = hhmmss_seconds_conversion(f"{update_time}:00")
+            local_seconds = ((time.localtime())[3]*3600) + ((time.localtime())[4] * 60)
+            update_seconds = hhmm_seconds_conversion(f"{update_time}")
             if (local_seconds < update_seconds):
                 delay = update_seconds - local_seconds
             else:
