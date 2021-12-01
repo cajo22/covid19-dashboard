@@ -1,12 +1,14 @@
 from constants import *
 from globals import *
 from uk_covid19 import Cov19API
-import sched, time, random
+import sched, time, random, logging
 from flask import Flask, render_template, request
 
 from covid_news_handling import process_news_json_data, remove_update, schedule_news_updates, remove_news
 
 app = Flask(__name__)
+
+logging.basicConfig(filename="sys_log.txt", level=logging.DEBUG, format="%(levelname)s: %(asctime)s %(message)s")
 
 def parse_csv_data(csv_filename : str) -> str:
 
@@ -66,12 +68,17 @@ def update_covid_data(update_name : str):
     national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data(config_data["national_data_csv_path"]))
     location, local_7day_infections = process_covid_json_data(covid_API_request())
 
+    logging.info("Updated COVID data!")
+
     # Remove update from data_updates
     remove_update(update_name)
 
 def schedule_covid_updates(update_interval : int, update_name : str):
     # Schedule a covid data update with the specified delay.
     # The name is passed so the update can be deleted from the dashboard after it occurs.
+
+    logging.debug(f"Covid update {update_name} set for {update_interval}s from now")
+
     return s.enter(update_interval, 1, update_covid_data, (update_name,))
 
 def process_covid_json_data(json_data : dict) -> str:
@@ -79,12 +86,17 @@ def process_covid_json_data(json_data : dict) -> str:
     # Extract the location of data and infections in the last 7 days and return them
 
     local_7day_infections = 0
-    for i in range(1, 8):
-        local_7day_infections += ((json_data["data"])[i])["newCasesByPublishDate"]
-    location = ((json_data["data"])[1])["areaName"]
+    location = config_data["local_location"]
+
+    if len(json_data["data"]) == 0:
+        logging.error("No local COVID-19 data could be retrieved")
+    else:
+        for i in range(1, 8):
+            local_7day_infections += ((json_data["data"])[i])["newCasesByPublishDate"]
+
     return(location, local_7day_infections)
 
-# Convert hhmmss values to seconds only
+# Convert hhmm values to seconds only
 # Used for update timings
 
 def hhmm_seconds_conversion(time : str) -> int:
@@ -160,6 +172,8 @@ def dashboard_process():
             news_update_event = schedule_news_updates( delay, f"{text_field} (id: {next_id_no})" )
         else:
             news_update_event = None
+
+        logging.info(f"Adding {text_field} (id: {next_id_no}) to data_updates")
 
         data_updates.append({"id": {next_id_no}, "title": f"{text_field} (id: {next_id_no})",
         "content": f"""Time: {update_time}, Repeat: {should_repeat}

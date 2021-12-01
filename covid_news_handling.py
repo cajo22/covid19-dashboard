@@ -1,5 +1,5 @@
 from globals import s, data_updates, hidden_article_titles, config_data
-import json, requests, sched, time
+import json, requests, sched, time, logging
 from flask import templating
 
 def news_API_request(covid_terms : str = config_data["news_search_terms"]) -> dict:
@@ -21,12 +21,15 @@ def process_news_json_data(json_data : dict = news_API_request()) -> dict:
     # When removing articles, add them to the list of 'hidden titles'.
     # Continue adding titles until a list of max_news_articles articles is formed, skipping over those with a 'hidden title'.
 
+    if len(json_data["articles"]) == 0:
+        logging.warning("No news articles could be retrieved")
+
     while current_news_count < config_data["max_news_articles"]:
         temp_article = ((json_data["articles"])[news_index])
         if temp_article["title"] not in hidden_article_titles:
             return_dicts.append( { "title": temp_article["title"]
-         #+ " (" + (temp_article["source"])["name"] + ")"
-         , "content": (temp_article["content"])[:192] + "... (" + temp_article["url"] + ")" } )
+        #+ " (" + (temp_article["source"])["name"] + ")"
+        , "content": (temp_article["content"])[:192] + "... (" + temp_article["url"] + ")" } )
             current_news_count += 1
         news_index += 1
 
@@ -39,9 +42,9 @@ def remove_news(news_title : str, news : dict):
     # TO-DO: FIX BUG WHERE LAST ARTICLE NOT REMOVED
 
     for i in range(len(news) - 1):
-        print((news[i])["title"])
         if ((news[i])["title"]) == news_title:
             hidden_article_titles.append(news_title)
+            logging.info(f"Removing article {news_title}")
             del news[i]
 
 def remove_update(update_name : str):
@@ -54,10 +57,14 @@ def remove_update(update_name : str):
                 s.cancel((data_updates[i])["covid_update_event"])
             if (data_updates[i])["news_update_event"] in s.queue:
                 s.cancel((data_updates[i])["news_update_event"])
+            logging.info(f"Removing update {update_name}")
             del data_updates[i]
+            break
 
 def update_news(update_name : str):
     news = process_news_json_data()
+
+    logging.info("Updated news articles!")
 
     # Remove update from data_updates
     remove_update(update_name)
@@ -65,4 +72,7 @@ def update_news(update_name : str):
 def schedule_news_updates(update_interval : int, update_name : str):
     # Schedule a news update with the specified delay.
     # The name is passed so the update can be deleted from the dashboard after it occurs.
+
+    logging.debug(f"News update {update_name} set for {update_interval}s from now")
+
     return s.enter(update_interval, 1, update_news, (update_name,))
