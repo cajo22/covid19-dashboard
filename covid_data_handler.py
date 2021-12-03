@@ -43,7 +43,7 @@ def process_covid_csv_data(covid_csv_data : str) -> int:
         total_deaths = (covid_csv_data[i].split(","))[COL_TOTAL_DEATHS]
         i += 1
 
-    return cases_7days, int(total_deaths), int(current_hospital_cases)
+    return cases_7days, int(current_hospital_cases), int(total_deaths)
 
 def covid_API_request(location : str = config_data["local_location"], location_type : str = config_data["local_location_type"]) -> dict:
     # Takes location & location type (defaulting to Exeter and ltla) and uses them as filters

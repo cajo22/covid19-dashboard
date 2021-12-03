@@ -5,6 +5,6 @@
     "news_search_terms" : "Covid COVID-19 coronavirus",
     "local_location" : "Exeter",
     "local_location_type" : "ltla",
-    "national_data_csv_path" : "static/nation_2021-10-28.csv",
+    "national_data_csv_path" : "nation_2021-10-28.csv",
     "image_path" : "image.jpeg"
 }

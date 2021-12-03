@@ -33,6 +33,8 @@ def process_news_json_data(json_data : dict = news_API_request()) -> dict:
             current_news_count += 1
         news_index += 1
 
+    logging.debug(type(return_dicts))
+
     return return_dicts
 
 def remove_news(news_title : str, news : dict):
