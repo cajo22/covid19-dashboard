@@ -1,6 +1,7 @@
 # Ignore pycache related files
 __pycache__
 *.pyc
+.pytest.cache
 
 # Ignore logs
 sys_log.txt

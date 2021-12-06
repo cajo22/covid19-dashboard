@@ -47,17 +47,31 @@ def remove_news(news_title : str, news : dict):
             logging.info(f"Removing article {news_title}")
             del news[i]
 
-def remove_update(update_name : str, remove_mode : str):
+def remove_update(update_name : str):
+    # When removing an update, binary search based on title.
+    # Delete it from data_updates.
+
+    for i in range(len(data_updates)):
+        if (data_updates[i])["title"] == update_name:
+            logging.info(f"Removing update {update_name}")
+            del data_updates[i]
+            break
+
+def cancel_update(update_name : str):
+    
     # When removing an update, binary search based on title.
     # Cancel its events (if they exist) and delete it from data_updates.
 
     for i in range(len(data_updates)):
+
         if (data_updates[i])["title"] == update_name:
-            if (data_updates[i])["covid_update_event"] in s.queue:
-                s.cancel((data_updates[i])["covid_update_event"])
-            if (data_updates[i])["news_update_event"] in s.queue:
-                s.cancel((data_updates[i])["news_update_event"])
-            logging.info(f"Removing update {update_name}")
+            if (data_updates[i])["covid_update_event"] != None:
+                if (data_updates[i])["covid_update_event"] in s.queue:
+                    s.cancel((data_updates[i])["covid_update_event"])
+            if (data_updates[i])["news_update_event"] != None:
+                if (data_updates[i])["news_update_event"] in s.queue:
+                    s.cancel((data_updates[i])["news_update_event"])
+            logging.info(f"Cancelling update {update_name}")
 
             del data_updates[i]
             break
@@ -68,8 +82,19 @@ def update_news(update_name : str):
 
     logging.info("Updated news articles!")
 
+    should_remove = True
+
+    for i in range(len(data_updates)):
+        if (data_updates[i])["title"] == update_name:
+            if (data_updates[i])["should_repeat"] == "True":
+                should_remove = False
+                logging.info(f"Repeating {(data_updates[i])['title']}") 
+                (data_updates[i])["news_update_event"] = schedule_news_updates(86400, (data_updates[i])['title'])
+                break
+
     # Remove update from data_updates
-    remove_update(update_name, "done")
+    if should_remove == True:
+        remove_update(update_name)
 
 def schedule_news_updates(update_interval : int, update_name : str):
     # Schedule a news update with the specified delay.

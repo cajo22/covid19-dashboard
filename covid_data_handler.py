@@ -4,7 +4,7 @@ from uk_covid19 import Cov19API
 import sched, time, random, logging
 from flask import Flask, render_template, request
 
-from covid_news_handling import process_news_json_data, remove_update, schedule_news_updates, remove_news
+from covid_news_handling import process_news_json_data, remove_update, cancel_update, schedule_news_updates, remove_news
 
 app = Flask(__name__)
 
@@ -70,8 +70,19 @@ def update_covid_data(update_name : str):
 
     logging.info("Updated COVID data!")
 
+    should_remove = True
+
+    for i in range(len(data_updates)):
+        if (data_updates[i])["title"] == update_name:
+            if (data_updates[i])["should_repeat"] == "True":
+                should_remove = False
+                logging.info(f"Repeating {(data_updates[i])['title']}") 
+                (data_updates[i])["covid_update_event"] = schedule_covid_updates(86400, (data_updates[i])['title'])
+                break
+
     # Remove update from data_updates
-    remove_update(update_name, "done")
+    if should_remove == True:
+        remove_update(update_name)
 
 def schedule_covid_updates(update_interval : int, update_name : str):
     # Schedule a covid data update with the specified delay.
@@ -115,9 +126,9 @@ def dashboard_process():
     if news_to_remove:
         remove_news(news_to_remove, news)
     
-    update_to_remove = request.args.get("update_item")
-    if update_to_remove:
-        remove_update(update_to_remove, "cancel")
+    update_to_cancel = request.args.get("update_item")
+    if update_to_cancel:
+        cancel_update(update_to_cancel)
 
     # This section handles how updates are processed.
     # Updates are stored in data_updates.
