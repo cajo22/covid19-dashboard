@@ -33,8 +33,6 @@ def process_news_json_data(json_data : dict = news_API_request()) -> dict:
             current_news_count += 1
         news_index += 1
 
-    logging.debug(type(return_dicts))
-
     return return_dicts
 
 def remove_news(news_title : str, news : dict):
@@ -49,7 +47,7 @@ def remove_news(news_title : str, news : dict):
             logging.info(f"Removing article {news_title}")
             del news[i]
 
-def remove_update(update_name : str):
+def remove_update(update_name : str, remove_mode : str):
     # When removing an update, binary search based on title.
     # Cancel its events (if they exist) and delete it from data_updates.
 
@@ -60,8 +58,10 @@ def remove_update(update_name : str):
             if (data_updates[i])["news_update_event"] in s.queue:
                 s.cancel((data_updates[i])["news_update_event"])
             logging.info(f"Removing update {update_name}")
+
             del data_updates[i]
             break
+    
 
 def update_news(update_name : str):
     news = process_news_json_data()
@@ -69,7 +69,7 @@ def update_news(update_name : str):
     logging.info("Updated news articles!")
 
     # Remove update from data_updates
-    remove_update(update_name)
+    remove_update(update_name, "done")
 
 def schedule_news_updates(update_interval : int, update_name : str):
     # Schedule a news update with the specified delay.

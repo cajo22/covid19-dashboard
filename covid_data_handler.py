@@ -71,7 +71,7 @@ def update_covid_data(update_name : str):
     logging.info("Updated COVID data!")
 
     # Remove update from data_updates
-    remove_update(update_name)
+    remove_update(update_name, "done")
 
 def schedule_covid_updates(update_interval : int, update_name : str):
     # Schedule a covid data update with the specified delay.
@@ -117,7 +117,7 @@ def dashboard_process():
     
     update_to_remove = request.args.get("update_item")
     if update_to_remove:
-        remove_update(update_to_remove)
+        remove_update(update_to_remove, "cancel")
 
     # This section handles how updates are processed.
     # Updates are stored in data_updates.
@@ -163,12 +163,12 @@ def dashboard_process():
 
         # Schedule updates
 
-        if should_update_covid:
+        if should_update_covid == "True":
             covid_update_event = schedule_covid_updates( delay, f"{text_field} (id: {next_id_no})" )
         else:
             covid_update_event = None
 
-        if should_update_news:
+        if should_update_news == "True":
             news_update_event = schedule_news_updates( delay, f"{text_field} (id: {next_id_no})" )
         else:
             news_update_event = None
@@ -178,6 +178,7 @@ def dashboard_process():
         data_updates.append({"id": {next_id_no}, "title": f"{text_field} (id: {next_id_no})",
         "content": f"""Time: {update_time}, Repeat: {should_repeat}
         Update covid data: {should_update_covid}, Update news: {should_update_news}""",
+        "should_repeat" : should_repeat,
         "covid_update_event": covid_update_event, "news_update_event": news_update_event })
 
     return(render_template("index.html", national_7day_infections = national_7day_infections,

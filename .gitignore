@@ -3,4 +3,4 @@ __pycache__
 *.pyc
 
 # Ignore logs
-*.log
+sys_log.txt
