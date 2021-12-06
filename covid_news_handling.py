@@ -39,13 +39,12 @@ def remove_news(news_title : str, news : dict):
     # When removing news, binary search based on title.
     # Delete it from news and add it to list of hidden titles
 
-    # TO-DO: FIX BUG WHERE LAST ARTICLE NOT REMOVED
-
-    for i in range(len(news) - 1):
+    for i in range(len(news)):
         if ((news[i])["title"]) == news_title:
             hidden_article_titles.append(news_title)
             logging.info(f"Removing article {news_title}")
             del news[i]
+            break
 
 def remove_update(update_name : str):
     # When removing an update, binary search based on title.
