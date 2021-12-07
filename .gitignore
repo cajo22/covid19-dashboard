@@ -2,6 +2,7 @@
 __pycache__
 *.pyc
 .pytest.cache
+.vscode
 
 # Ignore logs
 sys_log.txt

@@ -11,9 +11,12 @@ app = Flask(__name__)
 logging.basicConfig(filename="sys_log.txt", level=logging.DEBUG, format="%(levelname)s: %(asctime)s %(message)s")
 
 def parse_csv_data(csv_filename : str) -> str:
+    '''Add each line of a csv file to a list, not including line breaks.
 
-    # Each line (row) of file {csv_filename} is appended to a list, not including line breaks.
-    # This list is then returned.
+    csv_filename is the path to the csv file to be parsed.
+
+    Return value is the list of lines.
+    '''
 
     src_csv = open(csv_filename, "r")
     data = []
@@ -23,8 +26,12 @@ def parse_csv_data(csv_filename : str) -> str:
     return(data)
 
 def process_covid_csv_data(covid_csv_data : str) -> int:
-    # Takes a list of strings (intended to be the output of parse_csv_data).
-    # Returns three integers: new cases in last 7 days, current hospital cases, total deaths.
+    '''Extract covid data from csv data.
+
+    covid_csv_data is a list of lines from a csv file containing covid data.
+
+    Return values are new cases in last 7 days, current hospital cases, total deaths.
+    '''
 
     # New cases in the last 7 days
     # The most recent day (row 1) is invalid, so sum daily cases for rows 2 - 8.
@@ -46,6 +53,14 @@ def process_covid_csv_data(covid_csv_data : str) -> int:
     return cases_7days, int(current_hospital_cases), int(total_deaths)
 
 def covid_API_request(location : str = config_data["local_location"], location_type : str = config_data["local_location_type"]) -> dict:
+    '''Retrieve local covid data using Public Health England's COVID-19 API.
+
+    location is the location to retrieve data for. Defaults to a value set in config.json.
+    location_type is the type of location (e.g. ltla for low-tier local authority). Defaults to a value set in config.json.
+    
+    Return value is json data returned by the API, which is a dictionary.
+    '''
+    
     # Takes location & location type (defaulting to Exeter and ltla) and uses them as filters
     # when retrieving information about COVID-19 statistics.
     # The output is a dictionary with the retrieved information.
@@ -65,11 +80,17 @@ def covid_API_request(location : str = config_data["local_location"], location_t
     return json_data
 
 def update_covid_data(update_name : str):
+    '''Update covid data by grabbing from the API/csv. Remove the related data update if necessary.
+    
+    update_name is the name of the related update.
+    '''
+
     national_7day_infections, hospital_cases, deaths_total = process_covid_csv_data(parse_csv_data(config_data["national_data_csv_path"]))
     location, local_7day_infections = process_covid_json_data(covid_API_request())
 
     logging.info("Updated COVID data!")
 
+    # The update will be removed unless it is a repeating uodate.
     should_remove = True
 
     for i in range(len(data_updates)):
@@ -85,16 +106,23 @@ def update_covid_data(update_name : str):
         remove_update(update_name)
 
 def schedule_covid_updates(update_interval : int, update_name : str):
-    # Schedule a covid data update with the specified delay.
-    # The name is passed so the update can be deleted from the dashboard after it occurs.
+    ''' Schedule a covid data update with the specified delay.
+
+    update_interval is the number of seconds until the update occurs.
+    update_name is the name of the related data update in data_updates
+    '''
 
     logging.debug(f"Covid update {update_name} set for {update_interval}s from now")
 
     return s.enter(update_interval, 1, update_covid_data, (update_name,))
 
 def process_covid_json_data(json_data : dict) -> str:
-    # Intended to be used with the json data retrieved with the Cov19API
-    # Extract the location of data and infections in the last 7 days and return them
+    '''Extract the location of data and infections in the last 7 days.
+
+    json_data is a dict (returned by the Cov19API.)
+
+    Return values are the local location and local infections in the last 7 days.
+    '''
 
     local_7day_infections = 0
     location = config_data["local_location"]
@@ -107,16 +135,24 @@ def process_covid_json_data(json_data : dict) -> str:
 
     return(location, local_7day_infections)
 
-# Convert hhmm values to seconds only
-# Used for update timings
-
 def hhmm_seconds_conversion(time : str) -> int:
+    '''Used for update timings. Converts times with format hh:mm to seconds.
+
+    time is a string with format hh:mm.
+
+    Return value is an integer number of seconds.
+    '''
+
     hhmm_array = time.split(":")
     return((int(hhmm_array[0]) * 3600) + (int(hhmm_array[1]) * 60))
 
 @app.route('/index')
 def dashboard_process():
-    # This function is the 'meat' of the dashboard and adds virtually all of the interactivity.
+    ''' This function provides functionality to each interactive button using the other functions.
+    Variables are passed to the HTML file so they can be displayed on the dashboard.
+    Also, the scheduler is run every time this function is run.
+    This function is mapped to */index where * is the domain name.
+    '''
 
     s.run(blocking=False)
 
