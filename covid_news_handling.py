@@ -3,23 +3,34 @@ import json, requests, sched, time, logging
 from flask import templating
 
 def news_API_request(covid_terms : str = config_data["news_search_terms"]) -> dict:
-    fixed_terms = covid_terms.replace(" ", " OR ")
+    '''Retrieve json data with recent news articles using the News API.
+    API key and keywords are derived from config.json.
+
+    covid_terms is the desired keywords to use when retrieving articles.
+
+    Return values is json data (a dict).
+    '''
+
+    keywords = covid_terms.replace(" ", " OR ")
 
     api_key = config_data["news_api_key"]
 
-    base_url_with_api_key = f"https://newsapi.org/v2/everything?q=\u0027{fixed_terms}\u0027&apiKey={api_key}&sortBy=publishedAt&language=en"
+    base_url_with_api_key = f"https://newsapi.org/v2/everything?q=\u0027{keywords}\u0027&apiKey={api_key}&sortBy=publishedAt&language=en"
     response = requests.get(base_url_with_api_key)
     return(response.json())
 
 def process_news_json_data(json_data : dict = news_API_request()) -> dict:
+    '''A list of max_news_articles articles will always be displayed (unless the API call can't find that many.)
+    Previously removed articles will not appear again.
+
+    json_data is a dict which defaults to the return value of an API request.
+    
+    Return value is a dict containing up to max_news_articles articles.
+    '''
     return_dicts = []
     temp_article = {}
     news_index = 0
     current_news_count = 0
-
-    # A list of max_news_articles articles will always be displayed (unless the API call can't find that many.)
-    # When removing articles, add them to the list of 'hidden titles'.
-    # Continue adding titles until a list of max_news_articles articles is formed, skipping over those with a 'hidden title'.
 
     if len(json_data["articles"]) == 0:
         logging.warning("No news articles could be retrieved")
@@ -36,8 +47,12 @@ def process_news_json_data(json_data : dict = news_API_request()) -> dict:
     return return_dicts
 
 def remove_news(news_title : str, news : dict):
-    # When removing news, binary search based on title.
-    # Delete it from news and add it to list of hidden titles
+    '''Binary search for news based on title.
+    Delete it from news and add it to list of hidden titles
+
+    news_title is the title of the article to remove.
+    news is a dict; the currently displayed articles
+    '''
 
     for i in range(len(news)):
         if ((news[i])["title"]) == news_title:
@@ -47,8 +62,11 @@ def remove_news(news_title : str, news : dict):
             break
 
 def remove_update(update_name : str):
-    # When removing an update, binary search based on title.
-    # Delete it from data_updates.
+    '''Binary search for update based on title.
+    Delete it from data_updates
+
+    update_name is the title of the update to remove.
+    '''
 
     for i in range(len(data_updates)):
         if (data_updates[i])["title"] == update_name:
@@ -57,9 +75,11 @@ def remove_update(update_name : str):
             break
 
 def cancel_update(update_name : str):
-    
-    # When removing an update, binary search based on title.
-    # Cancel its events (if they exist) and delete it from data_updates.
+    '''Binary search for update based on title.
+    Delete it from data_updates and cancel the event associated.
+
+    update_name is the title of the update to cancel.
+    '''
 
     for i in range(len(data_updates)):
 
@@ -77,6 +97,12 @@ def cancel_update(update_name : str):
     
 
 def update_news(update_name : str):
+    '''Update news articles.
+    If the update is repeating, do not remove it and reschedule the same update for 24 hours later.
+
+    update_name is the name of the update which triggered this function.
+    '''
+
     news = process_news_json_data()
 
     logging.info("Updated news articles!")
@@ -96,8 +122,11 @@ def update_news(update_name : str):
         remove_update(update_name)
 
 def schedule_news_updates(update_interval : int, update_name : str):
-    # Schedule a news update with the specified delay.
-    # The name is passed so the update can be deleted from the dashboard after it occurs.
+    '''Schedule an update to the news articles with the specified delay.
+    
+    update_interval is the number of seconds before the update occurs.
+    update_name is the name of the update.
+    '''
 
     logging.debug(f"News update {update_name} set for {update_interval}s from now")
 
