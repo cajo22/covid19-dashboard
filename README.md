@@ -33,6 +33,9 @@ In config.json, you can customise certain aspects of the program
 ## Testing
 The best way to test is by using [pytest](https://pytest.org/). There are test functions included; you can use them with `pytest`.
 
+### Test functions
+Each function in the project has a test function. These test functions test whether the main function can be ran without an exception, and also asserts that certain values are returned for certain inputs, validating the actual logic in the function.
+
 ## Details
 ### Authors
 - cajo22: the software backend
