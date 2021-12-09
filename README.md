@@ -33,9 +33,13 @@ In config.json, you can customise certain aspects of the program
 ## Testing
 The best way to test is by using [pytest](https://pytest.org/). There are test functions included; you can use them with `pytest`.
 
-## Developer documentation
-
 ## Details
 ### Authors
 - cajo22: the software backend
 - Matt Collison: the index.html used as a frontend
+
+### License
+This software is covered by the MIT License. For more information, see LICENSE.txt
+
+### GitHub link
+This software is hosted on [GitHub](https://github.com/cajo22/covid19-dashboard)
