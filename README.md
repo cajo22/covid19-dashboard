@@ -39,7 +39,7 @@ The best way to test is by using [pytest](https://pytest.org/). There are test f
 - Matt Collison: the index.html used as a frontend
 
 ### License
-This software is covered by the MIT License. For more information, see LICENSE.txt
+This software is covered by the MIT License. For more information, see LICENSE.md
 
 ### GitHub link
 This software is hosted on [GitHub](https://github.com/cajo22/covid19-dashboard)
