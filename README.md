@@ -9,7 +9,7 @@ This is a dashboard for COVID-19 statistics. It displays national statistics (fo
 - [Flask](https://flask.palletsprojects.com/)
 
 ## Installation
-Run setup.py.
+```python setup.py install```
 
 ## Getting started
 Run covid_data_handler - the dashboard will be hosted on http://127.0.0.1:5000/index
